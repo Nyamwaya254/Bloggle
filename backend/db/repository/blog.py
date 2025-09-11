@@ -1,0 +1,48 @@
+from sqlalchemy.orm import Session
+from schemas.blog import CreateBlog, UpdateBlog
+from db.models.blog import Blog
+
+
+def create_new_blog(blog: CreateBlog, db: Session, author_id: int=1):
+    blog = Blog(
+        title= blog.title,
+        slug= blog.slug,
+        content= blog.content,
+        author_id= author_id
+    )
+    db.add(blog)
+    db.commit()
+    db.refresh(blog)
+    return blog
+
+def retrieve_blog(id: int, db: Session):
+    blog = db.query(Blog).filter(Blog.id == id).first()
+    return blog
+
+def list_blogs(db: Session):
+    blogs = db.query(Blog).filter(Blog.is_active == True).all()
+    return blogs
+def update_blog_by_id(id: int, blog: UpdateBlog, db: Session, author_id: int=1):
+    blog_by_id = db.query(Blog).filter(Blog.id == id).first()
+    if not blog_by_id:
+        return {"error": f"Blog with id {id} does not exist"}
+    if not blog_by_id.author_id == author_id:
+        return {"error": "You are not authorized to update this blog"}
+    blog_by_id.title = blog.title
+    blog_by_id.content = blog.content
+    db.add(blog_by_id)
+    db.commit()
+    return blog_by_id
+
+def delete_blog_by_id(id: int, db: Session, author_id: int):
+    blog_by_id = db.query(Blog).filter(Blog.id == id)
+    if not blog_by_id.first():
+        return {"error":f"Could not find blog with id {id}"}
+    if not blog_by_id.first().author_id == author_id:
+        return {"error":"You are not authorized to delete this blog"}
+    blog_by_id.delete()
+    db.commit()
+    return{"msg":f"Deleted blog with id {id}"}
+     
+    
+    
